@@ -14,6 +14,9 @@ class Army(
     val champion: Warrior?
         get() = troops.firstOrNull { it.isAlive }
 
+    val secondChampion: Warrior?
+        get() = troops.filter { it.isAlive }.drop(1).firstOrNull()
+
     fun addUnits(warrior: Warrior) {
         troops.add(warrior)
     }
@@ -36,7 +39,7 @@ fun fight(first: Army, second: Army): Boolean {
     var secondChampion = secondIterator.next()
 
     while (true){
-        val res = fight(firstChampion, secondChampion)
+        val res = fight(firstChampion, secondChampion, first, second)
         if(res) {
             if(!secondIterator.hasNext()) return true
             secondChampion = secondIterator.next()

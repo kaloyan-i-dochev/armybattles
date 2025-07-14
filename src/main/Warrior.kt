@@ -1,37 +1,60 @@
 package main
 
-    open class Warrior(
-        var health: Int = 50,
-        val attack: Int = 5,
-        var attackEffects: List<Effect> = emptyList()
-    ) {
-        open fun takeHit(damage: Int) {
-            this.health -= this.calculateTakenHit(damage)
-        }
-
-        open fun calculateTakenHit(damage: Int): Int {
-            return damage
-        }
+open class Warrior(
+    var health: Int = 50,
+    val attack: Int = 5,
+    var attackEffects: List<Effect> = emptyList()
+) {
+    open fun takeHit(damage: Int) {
+        this.health -= this.calculateTakenHit(damage)
     }
 
-    val Warrior.isAlive: Boolean
-        get() = health > 0
+    open fun calculateTakenHit(damage: Int): Int {
+        return damage
+    }
+}
 
-    infix fun Warrior.hits(other: Warrior) {
-        other.takeHit(this.attack)
-        this.attackEffects.forEach { effect ->
-            if (effect is Vampirism) {
-                effect.applyEffect(this, other)
-            }
+val Warrior.isAlive: Boolean
+    get() = health > 0
+
+infix fun Warrior.hits(other: Warrior) {
+    other.takeHit(this.attack)
+    this.attackEffects.forEach { effect ->
+        effect.applyEffect(this, other)
+    }
+}
+
+fun fight(first: Warrior, second: Warrior): Boolean {
+    while (first.isAlive && second.isAlive) {
+        first hits second
+        if (second.isAlive) {
+            second hits first
         }
     }
+    return first.isAlive
+}
 
-    fun fight(first: Warrior, second: Warrior) : Boolean {
-        while (first.isAlive && second.isAlive) {
+fun fight(first: Warrior, second: Warrior, firstArmy: Army?, secondArmy: Army?): Boolean {
+    while (first.isAlive && second.isAlive) {
+        if (firstArmy != null && secondArmy != null) {
+            first.hits(second, firstArmy, secondArmy)
+        } else {
             first hits second
-            if(second.isAlive) {
+        }
+        if (second.isAlive) {
+            if (firstArmy != null && secondArmy != null) {
+                second.hits(first, secondArmy, firstArmy)
+            } else {
                 second hits first
             }
         }
-        return first.isAlive
     }
+    return first.isAlive
+}
+
+fun Warrior.hits(other: Warrior, thisArmy: Army, otherArmy: Army) {
+    other.takeHit(this.attack)
+    this.attackEffects.forEach { effect ->
+        effect.applyEffect(this, thisArmy, other, otherArmy)
+    }
+}
