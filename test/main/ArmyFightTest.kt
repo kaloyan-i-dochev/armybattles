@@ -107,4 +107,30 @@ class ArmyFightTest {
             Arguments.of(5, "Knight", 8, "Warrior", false)
         )
     }
+
+    // Adding a 3 army battle as requested during the lecture
+    @Test
+    fun `army1 loses to army2 then army2 loses to army3`() {
+        val army1 = Army().apply {
+            addUnits(10) { Warrior() }
+        }
+
+        val army2 = Army().apply {
+            addUnits(15) { Knight() }
+        }
+
+        val army3 = Army().apply {
+            addUnits(10) { Knight() }
+        }
+
+        assertFalse(
+            fight(army1, army2),
+            "Army₂ (Knight) should beat Army₁ (Warrior)"
+        )
+
+        assertFalse(
+            fight(army2, army3),
+            "Army₃ (2 Knights) should beat Army₂ (1 Knight)"
+        )
+    }
 }
