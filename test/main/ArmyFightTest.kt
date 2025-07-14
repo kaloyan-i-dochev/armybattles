@@ -1,136 +1,122 @@
 package main
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
-import java.util.stream.Stream
+open class Warrior(
+    var health: Int = 50,
+    val attack: Int = 5
+) {
+    open fun takeHit(damage: Int) {
+        this.health -= damage
+    }
+}
 
-class ArmyFightTest {
 
-    @Test
-    fun `carl fights jim`() {
-        val carl = Warrior()
-        val jim = Knight()
-        assertFalse(fight(carl, jim))
+
+val Warrior.isAlive: Boolean
+    get() = health > 0
+
+infix fun Warrior.hits(other: Warrior) {
+    other.takeHit(this.attack)
+//    this.health -= other.attack
+}
+
+class Knight(
+    attack: Int = 7
+) : Warrior(attack = attack)
+
+class Defender(
+    health: Int = 60,
+    attack: Int = 3,
+    val defense: Int = 2
+) : Warrior(health = health, attack = attack) {
+    override fun takeHit(damage: Int) {
+        val reducedDamage = (damage - this.defense).coerceAtLeast(0)
+        this.health -= reducedDamage
+    }
+}
+
+class Rookie(
+    health: Int = 50,
+    attack: Int = 1
+): Warrior(health = health, attack = attack)
+
+
+
+class Army(
+    val troops: MutableList<Warrior> = mutableListOf()
+) : Iterable<Warrior> {
+    val isAlive: Boolean
+        get() = troops.any { it.isAlive }
+
+    fun takeHit(damage: Int) {
+        val aliveWarrior = troops.firstOrNull { it.isAlive }
+        aliveWarrior?.health = (aliveWarrior?.health ?: 0) - damage
     }
 
-    @Test
-    fun `ramon fights slevin`() {
-        val ramon = Knight()
-        val slevin = Warrior()
-        assertTrue(fight(ramon, slevin))
+    val champion: Warrior?
+        get() = troops.firstOrNull { it.isAlive }
+
+    fun addUnits(warrior: Warrior) {
+        troops.add(warrior)
     }
 
-    @Test
-    fun `bob fights mars and bob is alive`() {
-        val bob = Warrior()
-        val mars = Warrior()
-        fight(bob, mars)
-        assertTrue(bob.isAlive)
-    }
+    override fun iterator(): Iterator<Warrior> = troops.iterator()
+}
 
-    @Test
-    fun `zeus fights godkiller and zeus is alive`() {
-        val zeus = Knight()
-        val godkiller = Warrior()
-        fight(zeus, godkiller)
-        assertTrue(zeus.isAlive)
-    }
+fun Army.addUnits(n: Int, factory: ()->Warrior) {
+    repeat(n) { addUnits(factory()) }
+}
 
-    @Test
-    fun `husband fights wife and wife is not alive`() {
-        val husband = Warrior()
-        val wife = Warrior()
-        fight(husband, wife)
-        assertFalse(wife.isAlive)
-    }
-
-    @Test
-    fun `dragon fights knight and knight is alive`() {
-        val dragon = Warrior()
-        val knight = Knight()
-        fight(dragon, knight)
-        assertTrue(knight.isAlive)
-    }
-
-    @Test
-    fun `unit_1 fights unit_2 then unit_2 fights unit_3 and unit_2 loses`() {
-        val unit1 = Warrior()
-        val unit2 = Knight()
-        val unit3 = Warrior()
-        fight(unit1, unit2)
-        assertFalse(fight(unit2, unit3))
-    }
-
-    // This is where I have a unique implementation that is not from the lectures
-    @ParameterizedTest(name = "{0} {1}s vs {2} {3}s should result in {4}")
-    @MethodSource("armyBattleTestData")
-    fun `army battles`(
-        army1Count: Int,
-        army1Type: String,
-        army2Count: Int,
-        army2Type: String,
-        expectedResult: Boolean
-    ) {
-        val army1 = Army().apply {
-            addUnits(army1Count) {
-                when (army1Type) {
-                    "Knight" -> Knight()
-                    else -> Warrior()
-                }
-            }
+fun fight(first: Warrior, second: Warrior) : Boolean {
+    while (first.isAlive && second.isAlive) {
+        first hits second
+        if(second.isAlive) {
+            second hits first
         }
-        val army2 = Army().apply {
-            addUnits(army2Count) {
-                when (army2Type) {
-                    "Knight" -> Knight()
-                    else -> Warrior()
-                }
-            }
-        }
-
-        assertEquals(expectedResult, fight(army1, army2))
     }
 
-    companion object {
-        @JvmStatic
-        fun armyBattleTestData(): Stream<Arguments> = Stream.of(
-            Arguments.of(1, "Warrior", 2, "Warrior", false),
-            Arguments.of(2, "Warrior", 3, "Warrior", false),
-            Arguments.of(5, "Warrior", 7, "Warrior", false),
-            Arguments.of(20, "Warrior", 21, "Warrior", true),
-            Arguments.of(10, "Warrior", 11, "Warrior", true),
-            Arguments.of(11, "Warrior", 7, "Warrior", true),
-            Arguments.of(5, "Knight", 7, "Warrior", true),
-            Arguments.of(5, "Knight", 8, "Warrior", false)
-        )
+    return first.isAlive
+}
+
+// I wrote this function during the lecture
+fun fight(first: Army, second: Army): Boolean {
+    val firstIterator = first.iterator()
+    if(!firstIterator.hasNext()) return false
+
+    val secondIterator = second.iterator()
+    if(!firstIterator.hasNext()) return true
+
+    var firstChampion = firstIterator.next()
+    var secondChampion = secondIterator.next()
+
+    while (true){
+        val res = fight(firstChampion, secondChampion)
+        if(res) {
+            if(!secondIterator.hasNext()) return true
+            secondChampion = secondIterator.next()
+        } else {
+            if(!firstIterator.hasNext()) return false
+            firstChampion = firstIterator.next()
+        }
     }
 
-    // Adding a 3 army battle as requested during the lecture
-    @Test
-    fun `army1 loses to army2 then army2 loses to army3`() {
-        val army1 = Army().apply {
-            addUnits(10) { Warrior() }
-        }
+    return first.isAlive
+}
 
-        val army2 = Army().apply {
-            addUnits(15) { Knight() }
-        }
+fun main() {
+    val myArmy = Army()
+    myArmy.addUnits(3) { Knight() }
 
-        val army3 = Army().apply {
-            addUnits(10) { Knight() }
-        }
+    val enemyArmy = Army()
+    enemyArmy.addUnits(3) { Warrior() }
 
-        assertFalse(
-            fight(army1, army2),
-            "Army₂ (Knight) should beat Army₁ (Warrior)"
-        )
+    val army3 = Army()
+    army3.addUnits(20) { Warrior() }
+    army3.addUnits(5) { Knight() }
 
-        assertFalse(
-            fight(army2, army3),
-            "Army₃ (2 Knights) should beat Army₂ (1 Knight)"
-        )
-    }
+    val army4 = Army()
+    army4.addUnits(30) { Warrior() }
+
+    check(fight(myArmy, enemyArmy) == true)
+    check(fight(army3, army4) == false)
+    println("OK")
 }
