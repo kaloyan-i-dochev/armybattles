@@ -1,60 +1,74 @@
 package main
 
 open class Warrior(
-    var health: Int = 50,
-    val attack: Int = 5,
+    override var health: Int = 50,
+    override val attack: Int = 5,
     var attackEffects: List<Effect> = emptyList()
-) {
-    open fun takeHit(damage: Int) {
+) : Unit {
+
+    override fun takeHit(damage: Int) {
         this.health -= this.calculateTakenHit(damage)
     }
 
-    open fun calculateTakenHit(damage: Int): Int {
+    override fun calculateTakenHit(damage: Int): Int {
         return damage
+    }
+
+    override fun getActions(): List<Action> {
+        return if (attackEffects.isEmpty()) {
+            listOf(BasicAttack(attack))
+        } else {
+            listOf(EnhancedAttack(attack, attackEffects))
+        }
     }
 }
 
 val Warrior.isAlive: Boolean
     get() = health > 0
 
-infix fun Warrior.hits(other: Warrior) {
-    other.takeHit(this.attack)
-    this.attackEffects.forEach { effect ->
-        effect.applyEffect(this, other)
+// Legacy infix function - delegates to new system
+fun Warrior.hits(other: Warrior) {
+    val fightContext = FightContext(this, other)
+    val context = AttackContext(this, other, fightContext)
+    val actions = this.getActions()
+    for (action in actions) {
+        val effects = action.execute(context)
+        effects.forEach { it.apply(context) }
     }
 }
 
+// Legacy fight functions - delegate to new controller system
 fun fight(first: Warrior, second: Warrior): Boolean {
-    while (first.isAlive && second.isAlive) {
-        first hits second
-        if (second.isAlive) {
-            second hits first
-        }
-    }
-    return first.isAlive
+    val fightController = FightController()
+    val fightContext = FightContext(first, second)
+    return fightController.executeFight(fightContext)
 }
 
 fun fight(first: Warrior, second: Warrior, firstArmy: Army?, secondArmy: Army?): Boolean {
-    while (first.isAlive && second.isAlive) {
-        if (firstArmy != null && secondArmy != null) {
-            first.hits(second, firstArmy, secondArmy)
-        } else {
-            first hits second
-        }
-        if (second.isAlive) {
-            if (firstArmy != null && secondArmy != null) {
-                second.hits(first, secondArmy, firstArmy)
-            } else {
-                second hits first
-            }
-        }
+    return if (firstArmy != null && secondArmy != null) {
+        val battleContext = BattleContext(firstArmy, secondArmy)
+        val fightContext = FightContext(first, second, battleContext)
+        val fightController = FightController()
+        return fightController.executeFight(fightContext)
+    } else {
+        fight(first, second)
     }
-    return first.isAlive
 }
 
 fun Warrior.hits(other: Warrior, thisArmy: Army, otherArmy: Army) {
-    other.takeHit(this.attack)
-    this.attackEffects.forEach { effect ->
-        effect.applyEffect(this, thisArmy, other, otherArmy)
+    val battleContext = BattleContext(thisArmy, otherArmy)
+    val fightContext = FightContext(this, other, battleContext)
+    val context = AttackContext(this, other, fightContext)
+    val actions = this.getActions()
+    for (action in actions) {
+        val effects = action.execute(context)
+        effects.forEach { it.apply(context) }
     }
+}
+
+// Global fight function for any Unit types
+fun fight(first: Unit, second: Unit): Boolean {
+    val fightController = FightController()
+    val fightContext = FightContext(first, second)
+    return fightController.executeFight(fightContext)
 }

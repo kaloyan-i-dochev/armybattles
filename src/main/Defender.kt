@@ -1,5 +1,6 @@
 package main
 
+
 class Defender(
     health: Int = 60,
     attack: Int = 3,
