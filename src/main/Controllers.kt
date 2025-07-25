@@ -40,9 +40,9 @@ class FightController {
 class BattleController {
     private val fightController = FightController()
 
-    fun executeBattle(context: BattleContext): Boolean {
-        val army1Iterator = context.army1.iterator()
-        val army2Iterator = context.army2.iterator()
+    fun executeBattle(battleContext: BattleContext): Boolean {
+        val army1Iterator = battleContext.army1.iterator()
+        val army2Iterator = battleContext.army2.iterator()
 
         if (!army1Iterator.hasNext()) return false
         if (!army2Iterator.hasNext()) return true
@@ -51,9 +51,9 @@ class BattleController {
         var champion2 = army2Iterator.next()
 
         while (true) {
-            val fightContext = FightContext(champion1, champion2, context)
+            val fightContext = FightContext(champion1, champion2, battleContext)
             val result = fightController.executeFight(fightContext)
-            context.battleHistory.add(fightContext)
+            battleContext.battleHistory.add(fightContext)
 
             if (result) {
                 // Army1 champion won

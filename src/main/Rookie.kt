@@ -1,6 +1,6 @@
 package main
 
 class Rookie(
-    health: Int = 50,
-    attack: Int = 1
+    health: Int = UnitProps.Rookie.HEALTH,
+    attack: Int = UnitProps.Rookie.ATTACK
 ) : Warrior(health = health, attack = attack)

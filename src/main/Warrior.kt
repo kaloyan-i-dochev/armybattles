@@ -1,8 +1,8 @@
 package main
 
 open class Warrior(
-    override var health: Int = 50,
-    override val attack: Int = 5,
+    override var health: Int = UnitProps.Warrior.HEALTH,
+    override val attack: Int = UnitProps.Warrior.ATTACK,
     var attackEffects: List<Effect> = emptyList()
 ) : Unit {
 

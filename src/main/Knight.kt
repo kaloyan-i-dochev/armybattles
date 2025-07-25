@@ -1,5 +1,5 @@
 package main
 
 class Knight(
-    attack: Int = 7
+    attack: Int = UnitProps.Knight.ATTACK
 ) : Warrior(attack = attack)

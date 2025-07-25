@@ -2,9 +2,9 @@ package main
 
 
 class Defender(
-    health: Int = 60,
-    attack: Int = 3,
-    val defense: Int = 2
+    health: Int = UnitProps.Defender.HEALTH,
+    attack: Int = UnitProps.Defender.ATTACK,
+    val defense: Int = UnitProps.Defender.DEFENSE
 ) : Warrior(health = health, attack = attack) {
     override fun calculateTakenHit(damage: Int): Int {
         return (damage - this.defense).coerceAtLeast(0)
